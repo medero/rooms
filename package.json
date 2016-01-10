@@ -1,0 +1,11 @@
+{
+  "name": "rooms",
+  "description": "messing with socket.io rooms",
+  "version": "0.0.1",
+  "dependencies": {
+    "socket.io": "~1.4.3",
+    "express": "~4.13.3",
+    "jade": "~1.11.0",
+    "hbs": "~4.0.0"
+  }
+}

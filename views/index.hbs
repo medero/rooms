@@ -1,0 +1,10 @@
+<!doctype html>
+<div id="rooms">
+<h1>Game Rooms</h1>
+<a href="/create-room">Create a room</a>
+<ul>
+    {{#each rooms}}
+    <li><a href="/rooms/{{this.id}}">{{this.id}}</a></li>
+    {{/each}}
+</ul>
+</div>
