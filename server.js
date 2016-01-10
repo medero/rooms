@@ -60,7 +60,7 @@ io.on('connection', function(socket) {
     console.log('connection' + socket.handshake.url);
 
     socket.on('userJoin', function(room) {
-        console.log('god');
+        console.log('userJoin invoked');
         var id = room.id;
         if ( findRoom( id ) ) {
             findRoom(id).users.push( socket.id );

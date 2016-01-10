@@ -2,11 +2,25 @@
 <div id="rooms">
     <h1>You are in room: <span id="room-id">{{room.id}}</span></h1>
     <a href="/create-room">Create a room</a>
+    <form action="">
+        <label>Change your name: <input type="text"></label>
+    </form>
+    <section id="sidebar">
+        <h2>user list</h2>
+        <div id="users">
+        </div>
+    </section>
     <ul>
         {{#each rooms}}
         <li><a href="/rooms/{{this.id}}">{{this.id}}</a></li>
         {{/each}}
     </ul>
+    <style>
+        section#sidebar {
+            float: right;
+            width: 30em;
+        }
+    </style>
     <script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -31,8 +45,27 @@
             window.data = data;
             console.log(data);
             if ( data.roomId == roomId && data.users.length > 1 ) {
-                socket.emit('startGame');
+                renderUsers( data.users );
+                showStart();
             }
         });
+
+        var waitingOnPlayer = false;
+        function showStart() {
+            if ( !waitingOnPlayer )
+                $('<button/>').text('start').appendTo('body')
+        }
+
+        function renderUsers(users) {
+            $('#users').empty();
+            var $ul = $('<ul/>')
+            $.each( users, function( i, user ) {
+                var $a = $('<a/>').attr('href', user ).text( user );
+                $li = $('<li/>').append( $a )
+
+                    $li.appendTo($ul)
+            });
+            $ul.appendTo('#users')
+        }
     </script>
 </div>
