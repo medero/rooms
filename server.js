@@ -2,6 +2,7 @@ var app = require('express')(),
     server = require('http').Server(app),
     io = require('socket.io')(server),
     fs = require('fs'),
+    names = require('./lib/names'),
     port = 3001;
 
 
@@ -57,7 +58,21 @@ app.get('/create-room', function( req, res ) {
 
 io.on('connection', function(socket) {
 
+    var nicks = {};
+
     console.log('connection' + socket.handshake.url);
+
+    function getUserNames(id) {
+        var room = findRoom(id);
+        var users = [];
+        room.users.forEach(function(socketId) {
+            users.push({
+                socket_id: socketId,
+                name: nicks[socketId]
+            })
+        });
+        return users;
+    }
 
     socket.on('userJoin', function(room) {
         console.log('userJoin invoked');
@@ -67,10 +82,19 @@ io.on('connection', function(socket) {
 
             socket.join(id);
 
-            io.emit('getUsers', { roomId: id, users: findRoom(id).users });
+            io.emit('getUsers', { roomId: id, users: getUserNames(id) });
 
             //socket.broadcast.emit('getUsers', { users: findRoom(id).users });
         }
+    });
+
+    socket.on('makeGuestName', function() {
+
+        var randomName = names.generateName();
+
+        nicks[socket.id] = randomName;
+
+        socket.emit('receiveGuestName', { name: randomName });
     });
 
     socket.on('startGame', function() {

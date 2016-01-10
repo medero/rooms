@@ -3,7 +3,7 @@
     <h1>You are in room: <span id="room-id">{{room.id}}</span></h1>
     <a href="/create-room">Create a room</a>
     <form action="">
-        <label>Change your name: <input type="text"></label>
+        <label>Change your name: <input type="text" id="name"></label>
     </form>
     <section id="sidebar">
         <h2>user list</h2>
@@ -30,6 +30,12 @@
 
         socket.emit('userJoin', {id: roomId});
 
+        socket.emit('makeGuestName');
+
+        socket.on('receiveGuestName', function(data) {
+            $('#name').val(data.name);
+        });
+
         socket.on('receiveGame', function(data) {
             alert('Received game');
             console.log(data.puzzle);
@@ -46,9 +52,14 @@
             console.log(data);
             if ( data.roomId == roomId && data.users.length > 1 ) {
                 renderUsers( data.users );
+                removeStart();
                 showStart();
             }
         });
+
+        function removeStart() {
+            $('button').remove();
+        }
 
         var waitingOnPlayer = false;
         function showStart() {
@@ -57,11 +68,11 @@
         }
 
         function renderUsers(users) {
+            window.god = users;
             $('#users').empty();
             var $ul = $('<ul/>')
             $.each( users, function( i, user ) {
-                var $a = $('<a/>').attr('href', user ).text( user );
-                $li = $('<li/>').append( $a )
+                $li = $('<li/>').text( user.name );
 
                     $li.appendTo($ul)
             });
