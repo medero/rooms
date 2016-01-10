@@ -65,6 +65,8 @@ io.on('connection', function(socket) {
         if ( findRoom( id ) ) {
             findRoom(id).users.push( socket.id );
 
+            socket.join(id);
+
             io.emit('getUsers', { roomId: id, users: findRoom(id).users });
 
             //socket.broadcast.emit('getUsers', { users: findRoom(id).users });
