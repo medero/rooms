@@ -51,14 +51,40 @@ app.get('/create-room', function( req, res ) {
     rooms.push({
         id: id,
         users: []
-    })
+    });
     res.redirect( 302, '/rooms/' + id );
 });
 
 io.on('connection', function(socket) {
-    socket.emit('news', { hello: 'world' });
-    socket.on('my other event', function(data) {
-        console.log(data);
+
+    console.log('connection' + socket.handshake.url);
+
+    socket.on('userJoin', function(room) {
+        console.log('god');
+        var id = room.id;
+        if ( findRoom( id ) ) {
+            findRoom(id).users.push( socket.id );
+
+            io.emit('getUsers', { roomId: id, users: findRoom(id).users });
+
+            //socket.broadcast.emit('getUsers', { users: findRoom(id).users });
+        }
+    });
+
+    socket.on('startGame', function() {
+        var a = [1,2,3,4,5,6,7,8,9];
+        io.emit('receiveGame', { puzzle: a });
+    });
+
+    socket.on('disconnect', function() {
+        rooms.forEach(function(room) {
+            var index = room.users.indexOf ( socket.id );
+            if ( index != -1 ) {
+                var removed = room.users.splice( index, 1 );
+                console.log('user removed ' + removed + ' from ' + room.id );
+                io.emit('userLeft', {roomId: room.id });
+            }
+        });
     });
 });
 

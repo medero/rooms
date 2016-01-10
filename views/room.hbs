@@ -1,17 +1,38 @@
 <!doctype html>
 <div id="rooms">
-    <h1>You are in room: {{room.id}}</h1>
+    <h1>You are in room: <span id="room-id">{{room.id}}</span></h1>
     <a href="/create-room">Create a room</a>
     <ul>
         {{#each rooms}}
         <li><a href="/rooms/{{this.id}}">{{this.id}}</a></li>
         {{/each}}
     </ul>
+    <script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io.connect('http://localhost:3001');
-        socket.on('userJoin', function(data) {
+
+        var roomId = $("#room-id").text();
+
+        socket.emit('userJoin', {id: roomId});
+
+        socket.on('receiveGame', function(data) {
+            alert('Received game');
+            console.log(data.puzzle);
+        });
+
+        socket.on('userLeft', function(data) {
+            if ( data.roomId == roomId ) {
+                alert('User has left. Aborting game');
+            }
+        });
+
+        socket.on('getUsers', function(data) {
+            window.data = data;
             console.log(data);
+            if ( data.roomId == roomId && data.users.length > 1 ) {
+                socket.emit('startGame');
+            }
         });
     </script>
 </div>
