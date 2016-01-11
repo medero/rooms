@@ -56,9 +56,9 @@ app.get('/create-room', function( req, res ) {
     res.redirect( 302, '/rooms/' + id );
 });
 
-io.on('connection', function(socket) {
+var nicks = {};
 
-    var nicks = {};
+io.on('connection', function(socket) {
 
     console.log('connection' + socket.handshake.url);
 
@@ -66,6 +66,9 @@ io.on('connection', function(socket) {
         var room = findRoom(id);
         var users = [];
         room.users.forEach(function(socketId) {
+            console.log(socketId);
+            console.log(Object.keys(nicks));
+            console.log( nicks[socketId] );
             users.push({
                 socket_id: socketId,
                 name: nicks[socketId]
@@ -75,31 +78,35 @@ io.on('connection', function(socket) {
     }
 
     socket.on('userJoin', function(room) {
-        console.log('userJoin invoked');
         var id = room.id;
         if ( findRoom( id ) ) {
             findRoom(id).users.push( socket.id );
 
             socket.join(id);
 
-            io.emit('getUsers', { roomId: id, users: getUserNames(id) });
-
-            //socket.broadcast.emit('getUsers', { users: findRoom(id).users });
+            // push this to all users in this channel
+            io.sockets.in(id).emit('getUsers', { roomId: id, users: getUserNames(id) });
         }
     });
 
+    socket.on('message', function(message) {
+
+        io.sockets.in(message.room).emit('message', {
+            text: nicks[socket.id] + ': ' + message.text
+        });
+
+        /*socket.broadcast.to(message.room).*/
+    });
+
     socket.on('makeGuestName', function() {
-
         var randomName = names.generateName();
-
         nicks[socket.id] = randomName;
-
         socket.emit('receiveGuestName', { name: randomName });
     });
 
-    socket.on('startGame', function() {
+    socket.on('startGame', function(roomId) {
         var a = [1,2,3,4,5,6,7,8,9];
-        io.emit('receiveGame', { puzzle: a });
+        io.sockets.in(roomId).emit('receiveGame', { puzzle: a });
     });
 
     socket.on('disconnect', function() {
@@ -108,11 +115,14 @@ io.on('connection', function(socket) {
             if ( index != -1 ) {
                 var removed = room.users.splice( index, 1 );
                 console.log('user removed ' + removed + ' from ' + room.id );
-                io.emit('userLeft', {roomId: room.id });
+
+                // broad cast to all users EXCEPT current user
+                socket.broadcast.to(room.id).emit('userLeft', {roomId: room.id});
+
+                delete nicks[socket.id];
             }
         });
     });
 });
-
 
 server.listen(port);

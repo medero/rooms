@@ -2,19 +2,31 @@
 <div id="rooms">
     <h1>You are in room: <span id="room-id">{{room.id}}</span></h1>
     <a href="/create-room">Create a room</a>
+
+    <!-- Not ready
     <form action="">
         <label>Change your name: <input type="text" id="name"></label>
+        <input type="submit" value="Change"/>
     </form>
+    -->
+
     <section id="sidebar">
         <h2>user list</h2>
         <div id="users">
         </div>
     </section>
+    <h2>rooms</h2>
     <ul>
         {{#each rooms}}
         <li><a href="/rooms/{{this.id}}">{{this.id}}</a></li>
         {{/each}}
     </ul>
+    <h2>messages</h2>
+    <div id="messages-wrap"><ul id="messages"></li></div>
+    <form action="" id="form-send-message">
+        <input type="text" id="send-message" />
+        <input type="submit" value="Send" />
+    </form>
     <style>
         section#sidebar {
             float: right;
@@ -28,12 +40,11 @@
 
         var roomId = $("#room-id").text();
 
-        socket.emit('userJoin', {id: roomId});
-
         socket.emit('makeGuestName');
 
         socket.on('receiveGuestName', function(data) {
             $('#name').val(data.name);
+            socket.emit('userJoin', {id: roomId});
         });
 
         socket.on('receiveGame', function(data) {
@@ -41,17 +52,26 @@
             console.log(data.puzzle);
         });
 
+        socket.on('message', function( message ) {
+            var $element = $('<li />').text( message.text );
+            $('#messages').append( $element );
+        });
+
         socket.on('userLeft', function(data) {
             if ( data.roomId == roomId ) {
-                alert('User has left. Aborting game');
+                $('#messages').append(
+                        $('<li/>').text('User has left. Aborting game')
+                );
             }
         });
 
         socket.on('getUsers', function(data) {
-            window.data = data;
             console.log(data);
+
+            // show all users
+            renderUsers( data.users );
+
             if ( data.roomId == roomId && data.users.length > 1 ) {
-                renderUsers( data.users );
                 removeStart();
                 showStart();
             }
@@ -78,5 +98,21 @@
             });
             $ul.appendTo('#users')
         }
+
+        function sendMessage( text ) {
+
+            var message = {
+                text: text,
+                room: roomId
+            };
+
+            socket.emit('message', message );
+        }
+
+        $('#form-send-message').on('submit', function(e) {
+            sendMessage( $('#send-message').val() );
+            $('#send-message').val('')
+            return false;
+        });
     </script>
 </div>
